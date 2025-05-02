@@ -164,6 +164,7 @@ const Dictionary = () => {
     </div>
   );
 };
+//ok ok ok a
 
 export default Dictionary;
 
