@@ -4,6 +4,7 @@ const Dictionary = () => {
   const [word, setWord] = useState("");
   const [definition, setDefinition] = useState(null);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false); // New loading state
 
   // For Daily Learning - List of 5 random words and meanings
   const [dailyWords, setDailyWords] = useState([]);
@@ -34,15 +35,18 @@ const Dictionary = () => {
         words.push(data[0]);
       }
 
-      // Fetch definitions for each random word
+      // Fetch definitions for each random word in parallel
       const wordsWithDefinitions = await Promise.all(
         words.map(async (word) => {
           const defResponse = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
           const defData = await defResponse.json();
-          return { word, meaning: defData[0]?.meanings[0]?.definitions[0]?.definition || "No definition found." };
+          return {
+            word,
+            meaning: defData[0]?.meanings[0]?.definitions[0]?.definition || "No definition found.",
+          };
         })
       );
-      
+
       return wordsWithDefinitions;
     } catch (err) {
       console.error("Error fetching random words:", err);
@@ -52,6 +56,7 @@ const Dictionary = () => {
 
   const fetchDefinition = async () => {
     if (!word.trim()) return;
+    setLoading(true);  // Set loading state to true when fetching starts
     try {
       const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
       if (!response.ok) {
@@ -63,18 +68,22 @@ const Dictionary = () => {
     } catch (err) {
       setDefinition(null);
       setError(err.message);
+    } finally {
+      setLoading(false);  // Set loading state to false when fetching is complete
     }
   };
 
   return (
-    <div style={{
-      maxWidth: "600px",
-      margin: "2rem auto",
-      padding: "2rem",
-      backgroundColor: "#fff",
-      borderRadius: "12px",
-      boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
-    }}>
+    <div
+      style={{
+        maxWidth: "600px",
+        margin: "2rem auto",
+        padding: "2rem",
+        backgroundColor: "#fff",
+        borderRadius: "12px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+      }}
+    >
       <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
         <input
           type="text"
@@ -87,7 +96,7 @@ const Dictionary = () => {
             maxWidth: "300px",
             border: "1px solid #ccc",
             borderRadius: "8px",
-            fontSize: "1rem"
+            fontSize: "1rem",
           }}
         />
         <button
@@ -99,10 +108,10 @@ const Dictionary = () => {
             color: "#fff",
             border: "none",
             borderRadius: "8px",
-            cursor: "pointer"
+            cursor: "pointer",
           }}
         >
-          Search
+          {loading ? "Loading..." : "Search"} {/* Show loading text when fetching */}
         </button>
       </div>
 
@@ -110,7 +119,9 @@ const Dictionary = () => {
 
       {definition && (
         <div>
-          <h2 style={{ color: "#333", textAlign: "center", textTransform: "capitalize" }}>{definition.word}</h2>
+          <h2 style={{ color: "#333", textAlign: "center", textTransform: "capitalize" }}>
+            {definition.word}
+          </h2>
           {definition.meanings.map((meaning, index) => (
             <div key={index} style={{ marginTop: "1rem" }}>
               <h4 style={{ marginBottom: "0.5rem", color: "#4a90e2" }}>{meaning.partOfSpeech}</h4>
@@ -127,7 +138,15 @@ const Dictionary = () => {
       )}
 
       {/* Daily Learning Section */}
-      <div style={{ marginTop: "2rem", padding: "1.5rem", backgroundColor: "#eef2f5", borderRadius: "8px", boxShadow: "0 4px 10px rgba(0,0,0,0.05)" }}>
+      <div
+        style={{
+          marginTop: "2rem",
+          padding: "1.5rem",
+          backgroundColor: "#eef2f5",
+          borderRadius: "8px",
+          boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+        }}
+      >
         <h3 style={{ textAlign: "center", color: "#333" }}>Daily Learning</h3>
         <div style={{ textAlign: "center" }}>
           {dailyWords.length > 0 ? (
